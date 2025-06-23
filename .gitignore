@@ -1,0 +1,6 @@
+db/
+www/
+.env
+.DS_Store
+import-db/*
+!import-db/put backup.sql file here

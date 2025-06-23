@@ -1,3 +1,4 @@
+.PHONY: import-db build-web quick-start start stop wp-updates clean wp-install-core wp-install-plugins wp-reinstall-plugins wp-install-theme wp-convert-multisite wp-add-site god-mod wp-install deactivate-disposable-plugins
 include .env
 
 build-web:
@@ -77,6 +78,12 @@ wp-install: wp-install-core wp-reinstall-plugins wp-install-theme god-mod
 deactivate-disposable-plugins:
 	docker-compose exec web wp --allow-root plugin deactivate acf-content-analysis-for-yoast-seo wp-rocket secupress-pro really-simple-ssl
 
+import-db:
+	cat ./import-db/backup.sql | docker-compose exec -T db mariadb -u ${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+	docker-compose exec web wp --allow-root search-replace "${WP_IMPORT_URL}" "${WP_URL}" --skip-columns=guid --precise --all-tables
+	docker-compose exec web wp --allow-root search-replace "${WP_IMPORT_FOLDER}" "/var/www/html" --precise --all-tables
+	docker-compose exec web wp --allow-root cache flush
+	docker-compose exec web wp --allow-root transient delete --all
 
 debug-mail:
 	docker-compose exec web cat /usr/local/etc/php/conf.d/mailhog.ini
