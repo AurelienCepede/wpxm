@@ -12,6 +12,15 @@ services:
       - ./plugins:/var/plugins
     ports:
       - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/wp-admin/install.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
   db:
     image: mariadb
     command: [
@@ -20,12 +29,18 @@ services:
         '--collation-server=utf8mb4_unicode_ci'
     ]
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}", "-e", "SELECT 1;"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     volumes:
@@ -34,6 +49,9 @@ services:
         - "8080:80"
     links:
         - db:db
+    depends_on:
+      db:
+        condition: service_healthy
   mailhog:
       image: mailhog/mailhog
       ports:
