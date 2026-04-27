@@ -68,10 +68,12 @@ the local mkcert CA and trusted by the system — no browser warnings.
 Most settings are obvious; a few that are not:
 
 - **`WP_PLUGINS`** — space-separated wp.org plugin slugs to install + activate.
-- **`WP_PLUGINS_D`** — paths to local `.zip` plugins inside the container.
-  The host `./plugins/` directory is mounted as `/var/plugins` and is
-  gitignored — drop your zips there and reference them as
-  `/var/plugins/your-plugin.zip`. Installed but **not** auto-activated.
+- **`WP_PLUGINS_D`** — local zip paths and/or remote URLs (space-separated)
+  for plugins outside the wp.org repo: premium plugins, custom in-house
+  builds, pinned versions. The host `./plugins/` is mounted as `/var/plugins`
+  (zips gitignored), so drop your file there and reference it as
+  `/var/plugins/foo.zip`, **or** point directly at an HTTPS URL like
+  `https://example.com/foo.zip`. Installed but **not** auto-activated.
 - **`DB_ROOT_PASSWORD`** — MariaDB root password. Local-dev default is `root`,
   change it before any non-local use.
 
