@@ -12,9 +12,9 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 RUN chmod +x wp-cli.phar
 RUN mv wp-cli.phar /usr/local/bin/wp
 
-RUN EXPECTED_CHECKSUM="$(php -r 'copy(\"https://composer.github.io/installer.sig\", \"php://stdout\");')" && \
+RUN EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')" && \
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
-    ACTUAL_CHECKSUM="$(php -r 'echo hash_file(\"sha384\", \"composer-setup.php\");')" && \
+    ACTUAL_CHECKSUM="$(php -r 'echo hash_file("sha384", "composer-setup.php");')" && \
     if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then \
         echo 'ERROR: Invalid composer installer checksum' >&2; \
         rm composer-setup.php; \
