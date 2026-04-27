@@ -11,20 +11,29 @@ phpMyAdmin and Mailpit, driven by a `Makefile` and a `.env`.
 
 ## Quick start
 
+This stack sits behind a local Traefik v3 reverse proxy (in `traefik/`).
+Traefik takes over port 80, every project gets its own `*.localhost` hostname.
+
 ```sh
+# 1. One-time: shared network + Traefik (skip if already done)
+docker network create traefik
+( cd traefik && docker compose up -d )
+
+# 2. wpxm
 cp .env.example .env       # default credentials are local-dev only
 make start                 # build the web image + bring the stack up
 make wp-install            # install WP core, plugins (WP_PLUGINS) and theme (WP_THEME)
 ```
 
-Then open:
+Then open (no `/etc/hosts` edit needed — `*.localhost` resolves to 127.0.0.1):
 
-| URL                       | What                          |
-|---------------------------|-------------------------------|
-| http://localhost          | WordPress site                |
-| http://localhost/wp-admin | WP admin (`WP_USERNAME` / `WP_PASS` from `.env`) |
-| http://localhost:8080     | phpMyAdmin (bound to 127.0.0.1) |
-| http://localhost:8025     | Mailpit UI — every mail sent by WP lands here |
+| URL                                  | What                          |
+|--------------------------------------|-------------------------------|
+| http://wpxm.localhost                | WordPress site                |
+| http://wpxm.localhost/wp-admin       | WP admin (`WP_USERNAME` / `WP_PASS` from `.env`) |
+| http://pma.wpxm.localhost            | phpMyAdmin                    |
+| http://mail.wpxm.localhost           | Mailpit UI — every mail sent by WP lands here |
+| http://traefik.localhost             | Traefik dashboard (routes overview) |
 
 ## Common commands
 
@@ -58,6 +67,9 @@ Most settings are obvious; a few that are not:
 .
 ├── docker-compose.yml      # web / db / phpmyadmin / mailpit services
 ├── Makefile                # see `make help`
+├── traefik/                # standalone reverse proxy (Traefik v3)
+│   ├── docker-compose.yml
+│   └── README.md           # how to plug other projects into it
 ├── wp-config/
 │   ├── Dockerfile          # web image (built via docker compose build args)
 │   └── php-config.ini      # shared PHP runtime tuning (mounted in web + phpmyadmin)
@@ -74,5 +86,12 @@ This is the brute-force fix; it should be a last resort, not part of every insta
 **Mail not appearing in Mailpit** — check `make debug-mail` (should show
 `sendmail_path="/usr/bin/msmtp -t"`) and that the `mailpit` container is up.
 
-**Port 80 already in use** — adjust the host port in `docker-compose.yml`
-(`- "80:80"` → `- "8000:80"`) and update `WP_URL` accordingly.
+**Port 80 already in use** — only Traefik (in `traefik/`) binds host port 80.
+If something else has it (MAMP, native Apache, another proxy), stop that
+service or stop Traefik and bind wpxm directly (revert to a `ports: - "80:80"`
+on the `web` service and drop the labels — but you'll lose the friendly
+hostnames).
+
+**`traefik.localhost` shows "no routes"** — your project compose probably isn't
+joined to the `traefik` external network. Check the `networks:` block at the
+bottom of `docker-compose.yml`.

@@ -15,8 +15,16 @@ services:
       - ./wp-config/php-config.ini:/usr/local/etc/php/conf.d/conf.ini
       - ./www:/var/www/html
       - ./plugins:/var/plugins
-    ports:
-      - "80:80"
+    networks:
+      - default
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.wpxm-web.rule=Host(`wpxm.localhost`)"
+      - "traefik.http.routers.wpxm-web.entrypoints=web"
+      - "traefik.http.services.wpxm-web.loadbalancer.server.port=80"
+
   db:
     image: mariadb:11.4
     command: [
@@ -30,16 +38,36 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./db:/var/lib/mysql
+    # No external network — db stays private to the wpxm stack.
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
       PMA_HOST: db
     volumes:
       - ./wp-config/php-config.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
-    ports:
-        - "127.0.0.1:8080:80"
+    networks:
+      - default
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.wpxm-pma.rule=Host(`pma.wpxm.localhost`)"
+      - "traefik.http.routers.wpxm-pma.entrypoints=web"
+      - "traefik.http.services.wpxm-pma.loadbalancer.server.port=80"
+
   mailpit:
-      image: axllent/mailpit
-      ports:
-        - "127.0.0.1:1025:1025"
-        - "127.0.0.1:8025:8025"
+    image: axllent/mailpit
+    networks:
+      - default
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.wpxm-mail.rule=Host(`mail.wpxm.localhost`)"
+      - "traefik.http.routers.wpxm-mail.entrypoints=web"
+      - "traefik.http.services.wpxm-mail.loadbalancer.server.port=8025"
+
+networks:
+  traefik:
+    external: true
