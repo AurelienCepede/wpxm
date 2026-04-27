@@ -1,0 +1,22 @@
+# Secrets & local config
+.env
+
+# Runtime data (created by docker compose / wordpress)
+db/
+www/
+
+# Generated Dockerfile (built from Dockerfile.template)
+wp-config/Dockerfile
+
+# Plugin archives (binaires, à fournir hors-repo)
+plugins/*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
