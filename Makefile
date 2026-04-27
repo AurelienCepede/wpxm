@@ -28,6 +28,17 @@ clean: ## Stop containers and DELETE www/ + db/ (asks for YES confirmation)
 	$(COMPOSE) down -v
 	rm -rf www db
 
+## --- Logs ---
+
+logs: ## Tail logs from all services
+	$(COMPOSE) logs -f
+
+logs-web: ## Tail web (WordPress) logs
+	$(COMPOSE) logs -f web
+
+logs-db: ## Tail db (MariaDB) logs
+	$(COMPOSE) logs -f db
+
 ## --- WordPress install ---
 
 wp-install: wp-install-core wp-reinstall-plugins wp-install-theme ## Full WP setup: core + plugins + theme
@@ -84,6 +95,19 @@ deactivate-disposable-plugins: ## Disable plugins not needed in dev (e.g., wp-ro
 fix-perms: ## chmod -R 777 inside the container (last-resort permissions fix)
 	$(COMPOSE) exec web chmod -R 777 ./
 
+## --- Database ---
+
+import-db: ## Import import-db/backup.sql + rewrite URL/path from WP_IMPORT_*
+	@if [ ! -f "./import-db/backup.sql" ]; then \
+		echo "Error: ./import-db/backup.sql not found. Drop your dump there first."; \
+		exit 1; \
+	fi
+	cat ./import-db/backup.sql | $(COMPOSE) exec -T db mariadb -u ${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+	$(WP) search-replace "${WP_IMPORT_URL}" "${WP_URL}" --skip-columns=guid --precise --all-tables
+	$(WP) search-replace "${WP_IMPORT_FOLDER}" "/var/www/html" --precise --all-tables
+	$(WP) cache flush
+	$(WP) transient delete --all
+
 ## --- Multisite ---
 
 wp-convert-multisite: ## Convert single site to multisite
@@ -109,7 +133,8 @@ test-user-mail: ## Create+delete a test user to trigger the WP welcome email
 	$(WP) user create testuser test@user.uu --send-email
 	$(WP) user delete testuser --yes
 
-.PHONY: help build-web quick-start start stop clean wp-install wp-install-core \
-        wp-install-plugins wp-reinstall-plugins wp-install-theme wp-updates \
-        deactivate-disposable-plugins fix-perms wp-convert-multisite wp-add-site \
+.PHONY: help build-web quick-start start stop clean logs logs-web logs-db \
+        wp-install wp-install-core wp-install-plugins wp-reinstall-plugins \
+        wp-install-theme wp-updates deactivate-disposable-plugins fix-perms \
+        import-db wp-convert-multisite wp-add-site \
         debug-mail test-mail test-wp-mail test-user-mail

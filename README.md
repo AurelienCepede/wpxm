@@ -77,23 +77,6 @@ Most settings are obvious; a few that are not:
 - **`DB_ROOT_PASSWORD`** — MariaDB root password. Local-dev default is `root`,
   change it before any non-local use.
 
-## Directory layout
-
-```
-.
-├── docker-compose.yml      # web / db / phpmyadmin / mailpit services
-├── Makefile                # see `make help`
-├── traefik/                # standalone reverse proxy (Traefik v3)
-│   ├── docker-compose.yml
-│   └── README.md           # how to plug other projects into it
-├── wp-config/
-│   ├── Dockerfile          # web image (built via docker compose build args)
-│   └── php-config.ini      # shared PHP runtime tuning (mounted in web + phpmyadmin)
-├── plugins/                # local plugin .zips (gitignored)
-├── www/                    # WordPress files (gitignored, created at first start)
-└── db/                     # MariaDB data (gitignored, created at first start)
-```
-
 ## Troubleshooting
 
 **Permissions errors when WP writes to `wp-content/`** — run `make fix-perms`.
@@ -111,3 +94,41 @@ hostnames).
 **`traefik.localhost` shows "no routes"** — your project compose probably isn't
 joined to the `traefik` external network. Check the `networks:` block at the
 bottom of `docker-compose.yml`.
+
+## Importing an existing site
+
+The `make import-db` target restores a SQL dump and rewrites URLs/paths so
+they match the local environment.
+
+1. Drop your dump as `import-db/backup.sql` (the directory is gitignored
+   except for the placeholder).
+2. Set the source site's URL and content folder in `.env`:
+   ```
+   WP_IMPORT_URL=https://your-old-site.example
+   WP_IMPORT_FOLDER=/var/www/html
+   ```
+3. Run:
+   ```sh
+   make import-db
+   ```
+
+The target imports the SQL, runs `wp search-replace` against URL and folder,
+flushes cache and transients.
+
+## Directory layout
+
+```
+.
+├── docker-compose.yml      # web / db / phpmyadmin / mailpit services
+├── Makefile                # see `make help`
+├── traefik/                # standalone reverse proxy (Traefik v3)
+│   ├── docker-compose.yml
+│   └── README.md           # how to plug other projects into it
+├── wp-config/
+│   ├── Dockerfile          # web image (built via docker compose build args)
+│   └── php-config.ini      # shared PHP runtime tuning (mounted in web + phpmyadmin)
+├── plugins/                # local plugin .zips (gitignored except .gitkeep)
+├── import-db/              # drop backup.sql here for `make import-db` (gitignored)
+├── www/                    # WordPress files (gitignored, created at first start)
+└── db/                     # MariaDB data (gitignored, created at first start)
+```
