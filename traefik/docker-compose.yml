@@ -5,9 +5,9 @@ services:
     command:
       # Entrypoints: HTTP redirected to HTTPS; HTTPS terminates TLS via mkcert certs.
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.to=https"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.https.address=:443"
       # Docker provider — only containers with `traefik.enable=true` are routed.
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -28,7 +28,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.entrypoints=https"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.service=api@internal"
     networks:

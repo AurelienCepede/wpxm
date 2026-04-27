@@ -37,7 +37,7 @@ labels:
   - "traefik.enable=true"
   - "traefik.docker.network=traefik"
   - "traefik.http.routers.<unique-name>.rule=Host(`my-app.localhost`)"
-  - "traefik.http.routers.<unique-name>.entrypoints=websecure"
+  - "traefik.http.routers.<unique-name>.entrypoints=https"
   - "traefik.http.routers.<unique-name>.tls=true"
   - "traefik.http.services.<unique-name>.loadbalancer.server.port=<container-port>"
 ```
@@ -52,7 +52,7 @@ extra hostname appended).
 ## Notes
 
 - HTTP (port 80) auto-redirects to HTTPS (port 443) via the `web` entrypoint
-  redirection — services should declare `entrypoints=websecure` only.
+  redirection — services should declare `entrypoints=https` only.
 - TLS certs come from `./certs/` (gitignored — never commit private keys).
   Default cert is the mkcert-issued wildcard, declared in `dynamic.yml`.
 - Dashboard has no auth — fine on a personal machine, **don't expose ports
