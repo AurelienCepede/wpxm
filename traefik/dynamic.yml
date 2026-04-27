@@ -1,0 +1,11 @@
+# Traefik dynamic configuration — TLS certificate store.
+# Loaded via the `file` provider (see docker-compose.yml).
+tls:
+  certificates:
+    - certFile: /certs/local.pem
+      keyFile: /certs/local-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/local.pem
+        keyFile: /certs/local-key.pem

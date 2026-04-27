@@ -7,15 +7,24 @@ and exposes itself with labels — no host port collisions, friendly hostnames.
 ## One-time setup
 
 ```sh
-# Create the shared network (only once, persists across restarts)
+# 1. Install and trust the mkcert local CA
+brew install mkcert nss
+mkcert -install
+
+# 2. Generate the wildcard cert used by Traefik (not committed)
+mkdir -p certs
+( cd certs && mkcert -cert-file local.pem -key-file local-key.pem \
+    "localhost" "wpxm.localhost" "pma.wpxm.localhost" "mail.wpxm.localhost" \
+    "traefik.localhost" "*.localhost" "*.wpxm.localhost" )
+
+# 3. Create the shared network (persists across restarts)
 docker network create traefik
 
-cd traefik
+# 4. Start Traefik
 docker compose up -d
 ```
 
-Open http://traefik.localhost — you'll see the Traefik dashboard with the
-list of routed services.
+Open https://traefik.localhost — Traefik dashboard with all routed services.
 
 ## How to plug a project into Traefik
 
@@ -26,19 +35,27 @@ list of routed services.
 ```yaml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.<unique-name>.rule=Host(`my-app.localhost`)"
-  - "traefik.http.routers.<unique-name>.entrypoints=web"
-  - "traefik.http.services.<unique-name>.loadbalancer.server.port=<container-port>"
   - "traefik.docker.network=traefik"
+  - "traefik.http.routers.<unique-name>.rule=Host(`my-app.localhost`)"
+  - "traefik.http.routers.<unique-name>.entrypoints=websecure"
+  - "traefik.http.routers.<unique-name>.tls=true"
+  - "traefik.http.services.<unique-name>.loadbalancer.server.port=<container-port>"
 ```
 
 `*.localhost` resolves to 127.0.0.1 by default (RFC 6761) — no `/etc/hosts`
 edits needed.
 
+If `my-app` is under a different hostname (e.g., `my-app.local`), regenerate
+the cert and add it to the SAN list (rerun the mkcert command above with the
+extra hostname appended).
+
 ## Notes
 
-- HTTP only by default. Local dev doesn't need TLS.
-- Dashboard has no auth — fine on a personal machine, **don't expose 443/80
-  to the internet** with this config.
+- HTTP (port 80) auto-redirects to HTTPS (port 443) via the `web` entrypoint
+  redirection — services should declare `entrypoints=websecure` only.
+- TLS certs come from `./certs/` (gitignored — never commit private keys).
+  Default cert is the mkcert-issued wildcard, declared in `dynamic.yml`.
+- Dashboard has no auth — fine on a personal machine, **don't expose ports
+  80/443 to the internet** with this config.
 - Image pinned to `traefik:v3` (rolling latest of the v3 line). Pin to a
   specific minor (e.g., `traefik:v3.3`) if you want reproducible builds.

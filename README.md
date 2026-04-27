@@ -12,14 +12,25 @@ phpMyAdmin and Mailpit, driven by a `Makefile` and a `.env`.
 ## Quick start
 
 This stack sits behind a local Traefik v3 reverse proxy (in `traefik/`).
-Traefik takes over port 80, every project gets its own `*.localhost` hostname.
+Traefik takes over ports 80/443 and serves every project under its own
+`*.localhost` hostname over HTTPS, with certs issued by a local mkcert CA.
 
 ```sh
-# 1. One-time: shared network + Traefik (skip if already done)
+# 1. One-time on this machine: install mkcert and trust its CA
+brew install mkcert nss
+mkcert -install                                    # asks for sudo
+
+# 2. One-time per project: generate the wildcard cert (not committed)
+( cd traefik/certs 2>/dev/null || mkdir -p traefik/certs && cd traefik/certs && \
+  mkcert -cert-file local.pem -key-file local-key.pem \
+    "localhost" "wpxm.localhost" "pma.wpxm.localhost" "mail.wpxm.localhost" \
+    "traefik.localhost" "*.localhost" "*.wpxm.localhost" )
+
+# 3. One-time: shared network + Traefik
 docker network create traefik
 ( cd traefik && docker compose up -d )
 
-# 2. wpxm
+# 4. wpxm
 cp .env.example .env       # default credentials are local-dev only
 make start                 # build the web image + bring the stack up
 make wp-install            # install WP core, plugins (WP_PLUGINS) and theme (WP_THEME)
@@ -29,11 +40,14 @@ Then open (no `/etc/hosts` edit needed — `*.localhost` resolves to 127.0.0.1):
 
 | URL                                  | What                          |
 |--------------------------------------|-------------------------------|
-| http://wpxm.localhost                | WordPress site                |
-| http://wpxm.localhost/wp-admin       | WP admin (`WP_USERNAME` / `WP_PASS` from `.env`) |
-| http://pma.wpxm.localhost            | phpMyAdmin                    |
-| http://mail.wpxm.localhost           | Mailpit UI — every mail sent by WP lands here |
-| http://traefik.localhost             | Traefik dashboard (routes overview) |
+| https://wpxm.localhost                | WordPress site                |
+| https://wpxm.localhost/wp-admin       | WP admin (`WP_USERNAME` / `WP_PASS` from `.env`) |
+| https://pma.wpxm.localhost           | phpMyAdmin                    |
+| https://mail.wpxm.localhost          | Mailpit UI — every mail sent by WP lands here |
+| https://traefik.localhost            | Traefik dashboard (routes overview) |
+
+HTTP requests are auto-redirected to HTTPS (308). Certificates are issued by
+the local mkcert CA and trusted by the system — no browser warnings.
 
 ## Common commands
 
