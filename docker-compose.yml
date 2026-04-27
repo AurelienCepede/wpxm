@@ -1,5 +1,10 @@
 services:
   web:
+    build:
+      context: ./wp-config
+      args:
+        WP_VERSION: ${DOCKER_IMAGE_WP_VERSION}
+        PHP_VERSION: ${DOCKER_IMAGE_PHP_VERSION}
     image: ${DOCKER_IMAGE_WEB}:wp${DOCKER_IMAGE_WP_VERSION}-php${DOCKER_IMAGE_PHP_VERSION}
     environment:
       WORDPRESS_DB_HOST: db
@@ -30,11 +35,11 @@ services:
     environment:
       PMA_HOST: db
     volumes:
-      - ./wp-config/phpmyadmin.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+      - ./wp-config/php-config.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
     ports:
-        - "8080:80"
+        - "127.0.0.1:8080:80"
   mailpit:
       image: axllent/mailpit
       ports:
-        - "1025:1025"
-        - "8025:8025"
+        - "127.0.0.1:1025:1025"
+        - "127.0.0.1:8025:8025"

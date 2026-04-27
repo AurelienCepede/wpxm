@@ -4,9 +4,7 @@ COMPOSE := docker compose
 WP      := $(COMPOSE) exec -T web wp --allow-root
 
 build-web:
-	sed 's|\$${WP_VERSION}|${DOCKER_IMAGE_WP_VERSION}|g; s|\$${PHP_VERSION}|${DOCKER_IMAGE_PHP_VERSION}|g' ./wp-config/Dockerfile.template > ./wp-config/Dockerfile
-	docker build -t ${DOCKER_IMAGE_WEB}:wp${DOCKER_IMAGE_WP_VERSION}-php${DOCKER_IMAGE_PHP_VERSION} ./wp-config
-	rm ./wp-config/Dockerfile
+	$(COMPOSE) build web
 
 quick-start:
 	$(COMPOSE) up -d
@@ -26,8 +24,10 @@ wp-updates:
 	$(WP) wc update
 
 clean:
-	$(COMPOSE) down
-	sudo rm -R www db
+	@printf 'This will stop containers and DELETE www/ and db/ (DB volume + WordPress files).\nType YES to confirm: '; \
+	read confirm; [ "$$confirm" = "YES" ] || { echo "Aborted."; exit 1; }
+	$(COMPOSE) down -v
+	rm -rf www db
 
 wp-install-core:
 	$(WP) core install \
@@ -74,10 +74,10 @@ wp-add-site:
 		--slug=${WP_MULTISITE_SLUG} \
 		--title="${WP_MULTISITE_TITLE}"
 
-god-mod:
+fix-perms:
 	$(COMPOSE) exec web chmod -R 777 ./
 
-wp-install: wp-install-core wp-reinstall-plugins wp-install-theme god-mod
+wp-install: wp-install-core wp-reinstall-plugins wp-install-theme
 
 deactivate-disposable-plugins:
 	$(WP) plugin deactivate acf-content-analysis-for-yoast-seo wp-rocket secupress-pro really-simple-ssl

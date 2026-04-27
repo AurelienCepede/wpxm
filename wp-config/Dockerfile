@@ -1,3 +1,5 @@
+ARG WP_VERSION
+ARG PHP_VERSION
 FROM wordpress:${WP_VERSION}-php${PHP_VERSION}-apache
 
 # msmtp routes PHP mail() to the mailpit SMTP server on the compose network.
