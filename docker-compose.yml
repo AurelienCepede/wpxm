@@ -28,12 +28,12 @@ services:
       - ./db:/var/lib/mysql
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
     volumes:
       - ./wp-config/phpmyadmin.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
     ports:
         - "8080:80"
-    links:
-        - db:db
   mailhog:
       image: mailhog/mailhog
       ports:
