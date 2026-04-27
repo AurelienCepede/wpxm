@@ -84,7 +84,7 @@ deactivate-disposable-plugins:
 
 
 debug-mail:
-	$(COMPOSE) exec web cat /usr/local/etc/php/conf.d/mailhog.ini
+	$(COMPOSE) exec web cat /usr/local/etc/php/conf.d/mailpit.ini
 
 test-mail:
 	$(WP) eval "mail('sendto@example.com', 'The subject', 'The email body content', array('Content-Type' => 'text/html; charset=UTF-8', 'From' => 'My Name <john@doe.fr>') );"
